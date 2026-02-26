@@ -2,56 +2,50 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
-# Enable CORS so your Vite app (Vercel) can talk to this API (Render)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, replace with your Vercel URL
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Supabase Setup
 URL = os.getenv("SUPABASE_URL")
-KEY = os.getenv("SUPABASE_KEY")
+KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") 
 supabase: Client = create_client(URL, KEY)
 
 @app.post("/notes")
-def add_note(note: dict, authorization: str = Header(None)):
-    token = authorization.replace("Bearer ", "")
-    supabase.postgrest.auth(token)
-    response = supabase.table("notes").insert({"content": note['content']}).execute()
-    return response.data
+async def add_note(note: dict, authorization: str = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing authorization header")
+    
+    try:
+        token = authorization.replace("Bearer ", "")
+        user = supabase.auth.get_user(token)
+        user_id = user.user.id
+
+        response = supabase.table("notes").insert({
+            "content": note['content'],
+            "user_id": user_id
+        }).execute()
+        
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
 @app.get("/diary")
-def get_diary():
-    response = supabase.table("diary").select("*").execute()
-    return response.data
-
-from pydantic import BaseModel
-
-class AuthSchema(BaseModel):
-    email: str
-    password: str
-
-@app.post("/signup")
-def signup(data: AuthSchema):
-    try:
-        res = supabase.auth.sign_up({"email": data.email, "password": data.password})
-        return {"message": "Success! Please check your email for a confirmation link."}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.post("/login")
-def login(data: AuthSchema):
-    try:
-        res = supabase.auth.sign_in_with_password({"email": data.email, "password": data.password})
+async def get_diary(authorization: str = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing authorization header")
         
-        return {
-            "access_token": res.session.access_token,
-            "user": res.user
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Invalid credentials")
+    token = authorization.replace("Bearer ", "")
+    user = supabase.auth.get_user(token)
+    user_id = user.user.id
+
+    response = supabase.table("notes").select("*").eq("user_id", user_id).execute()
+    return response.data
