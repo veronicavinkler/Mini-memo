@@ -20,12 +20,17 @@ export default function Navbar({ session, supabase }) {
         MiniMemo
       </Link>
 
-      <div>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
         {session ? (
           <>
             <Link to="/notes" style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}>
               My Notes
             </Link>
+            
+            <Link to="/diary" style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}>
+              Diary
+            </Link>
+
             <button 
               onClick={handleLogout}
               style={{ background: '#ff4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
