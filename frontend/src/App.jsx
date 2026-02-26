@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -8,15 +8,21 @@ import Navbar from './components/navbar/Navbar';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <>
       <Navbar />
       <Routes>
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
 
         <Route path="/notes" element={
-          <SignedIn>
-            <Notes />
-          </SignedIn>
+          <>
+            <SignedIn>
+              <Notes />
+            </SignedIn>
+            <SignedOut>
+              <RedirectToSignIn />
+            </SignedOut>
+          </>
         } />
 
         <Route path="/diary" element={
@@ -30,6 +36,6 @@ export default function App() {
           </>
         } />
       </Routes>
-    </BrowserRouter>
+    </>
   );
 }
