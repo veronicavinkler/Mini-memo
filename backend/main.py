@@ -32,22 +32,26 @@ def get_diary():
 
 from pydantic import BaseModel
 
-class UserAuth(BaseModel):
+class AuthSchema(BaseModel):
     email: str
     password: str
 
 @app.post("/signup")
-def signup(data: UserAuth):
-    response = supabase.auth.sign_up({
-        "email": data.email,
-        "password": data.password,
-    })
-    return {"message": "Check your email for confirmation!", "user": response.user}
+def signup(data: AuthSchema):
+    try:
+        res = supabase.auth.sign_up({"email": data.email, "password": data.password})
+        return {"message": "Success! Please check your email for a confirmation link."}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/login")
-def login(data: UserAuth):
-    response = supabase.auth.sign_in_with_password({
-        "email": data.email,
-        "password": data.password,
-    })
-    return {"session": response.session, "user": response.user}
+def login(data: AuthSchema):
+    try:
+        res = supabase.auth.sign_in_with_password({"email": data.email, "password": data.password})
+        
+        return {
+            "access_token": res.session.access_token,
+            "user": res.user
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Invalid credentials")
