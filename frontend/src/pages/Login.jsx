@@ -1,50 +1,45 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function Login() {
+export default function Login({ supabase }) { // Receive supabase client as a prop
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const navigate = useNavigate(); // For redirecting after login
-
-  // Replace this with your actual Render URL
-  const API_URL = "https://mini-memo.onrender.com";
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("Processing...");
-    
-    const endpoint = isSignup ? '/signup' : '/login';
-    
+
     try {
-      const res = await fetch(`${API_URL}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        if (isSignup) {
-          setMessage("Signup successful! You can now log in.");
-          setIsSignup(false); // Switch to login mode
-        } else {
-          // LOGIN SUCCESS
-          // 1. Save the token for your other pages to use
-          localStorage.setItem('token', data.access_token);
-          setMessage("Logged in! Redirecting...");
-          
-          // 2. Redirect to the Notes page
-          setTimeout(() => navigate('/notes'), 1500);
-        }
+      let result;
+      if (isSignup) {
+          result = await supabase.auth.signUp({
+          email,
+          password,
+        });
       } else {
-        // Show error from FastAPI (like "Invalid credentials")
-        setMessage("Error: " + (data.detail || "Something went wrong"));
+          result = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+      }
+
+      const { data, error } = result;
+
+      if (error) {
+        setMessage("Error: " + error.message);
+      } else {
+        if (isSignup) {
+          setMessage("Signup successful! Check your email for a confirmation link.");
+        } else {
+          setMessage("Logged in! Redirecting...");
+          setTimeout(() => navigate('/notes'), 1000);
+        }
       }
     } catch (err) {
-      setMessage("Connection error. Is the backend running?");
+      setMessage("An unexpected error occurred.");
       console.error(err);
     }
   };
