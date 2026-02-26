@@ -1,61 +1,42 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { UserButton, useAuth, useClerk } from "@clerk/clerk-react";
 
-export default function Navbar() {
+export default function Navbar({ session, supabase }) {
   const navigate = useNavigate();
-  const { signOut } = useClerk();
-  const { isSignedIn } = useAuth();
-
-  const navStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '10px 20px',
-    background: '#333',
-    color: 'white',
-    marginBottom: '20px'
-  };
-
-  const linkGroupStyle = { display: 'flex', gap: '20px' };
-  const linkStyle = { color: 'white', textDecoration: 'none', fontWeight: 'bold' };
-
-  const logoutButtonStyle = {
-    background: '#ff4d4d',
-    color: 'white',
-    border: 'none',
-    padding: '8px 15px',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    fontWeight: 'bold'
-  };
 
   const handleLogout = async () => {
-    await signOut();
-    localStorage.removeItem('token');
+    await supabase.auth.signOut();
     navigate('/login');
   };
 
   return (
-    <nav style={navStyle}>
-      <div style={linkGroupStyle}>
-        <Link style={linkStyle} to="/">Home</Link>
-        
-        {isSignedIn && (
-          <>
-            <Link style={linkStyle} to="/notes">Notes</Link>
-            <Link style={linkStyle} to="/diary">Diary</Link>
-          </>
-        )}
-      </div>
+    <nav style={{ 
+      display: 'flex', 
+      justifyContent: 'space-between', 
+      padding: '1rem', 
+      background: '#333', 
+      color: 'white' 
+    }}>
+      <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: 'bold' }}>
+        MiniMemo
+      </Link>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-        {isSignedIn ? (
+      <div>
+        {session ? (
           <>
-            <UserButton afterSignOutUrl="/login" />
-            <button onClick={handleLogout} style={logoutButtonStyle}>Logout</button>
+            <Link to="/notes" style={{ color: 'white', marginRight: '15px', textDecoration: 'none' }}>
+              My Notes
+            </Link>
+            <button 
+              onClick={handleLogout}
+              style={{ background: '#ff4444', color: 'white', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              Logout
+            </button>
           </>
         ) : (
-          <Link style={linkStyle} to="/login">Login</Link>
+          <Link to="/login" style={{ color: 'white', textDecoration: 'none' }}>
+            Login
+          </Link>
         )}
       </div>
     </nav>
