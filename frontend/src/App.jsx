@@ -1,22 +1,35 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Notes from './pages/Notes';
 import Diary from './pages/Diary';
 import Navbar from './components/navbar/Navbar';
 
-function App() {
+export default function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/notes" element={<Notes />} />
-        <Route path="/diary" element={<Diary />} />
+
+        <Route path="/notes" element={
+          <SignedIn>
+            <Notes />
+          </SignedIn>
+        } />
+
+        <Route path="/diary" element={
+          <>
+            <SignedIn>
+              <Diary />
+            </SignedIn>
+            <SignedOut>
+              <RedirectToSignIn />
+            </SignedOut>
+          </>
+        } />
       </Routes>
-    </Router>
+    </BrowserRouter>
   );
 }
-
-export default App;

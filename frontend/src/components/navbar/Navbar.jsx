@@ -1,8 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { UserButton, useAuth, useClerk } from "@clerk/clerk-react";
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const isLoggedIn = !!localStorage.getItem('token');
+  const { signOut } = useClerk();
+  const { isSignedIn } = useAuth();
 
   const navStyle = {
     display: 'flex',
@@ -14,16 +16,8 @@ export default function Navbar() {
     marginBottom: '20px'
   };
 
-  const linkGroupStyle = {
-    display: 'flex',
-    gap: '20px'
-  };
-
-  const linkStyle = {
-    color: 'white',
-    textDecoration: 'none',
-    fontWeight: 'bold'
-  };
+  const linkGroupStyle = { display: 'flex', gap: '20px' };
+  const linkStyle = { color: 'white', textDecoration: 'none', fontWeight: 'bold' };
 
   const logoutButtonStyle = {
     background: '#ff4d4d',
@@ -35,10 +29,10 @@ export default function Navbar() {
     fontWeight: 'bold'
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     localStorage.removeItem('token');
     navigate('/login');
-    window.location.reload(); 
   };
 
   return (
@@ -46,8 +40,7 @@ export default function Navbar() {
       <div style={linkGroupStyle}>
         <Link style={linkStyle} to="/">Home</Link>
         
-        {/* Only show these if logged in */}
-        {isLoggedIn && (
+        {isSignedIn && (
           <>
             <Link style={linkStyle} to="/notes">Notes</Link>
             <Link style={linkStyle} to="/diary">Diary</Link>
@@ -55,9 +48,12 @@ export default function Navbar() {
         )}
       </div>
 
-      <div>
-        {isLoggedIn ? (
-          <button onClick={handleLogout} style={logoutButtonStyle}>Logout</button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+        {isSignedIn ? (
+          <>
+            <UserButton afterSignOutUrl="/login" />
+            <button onClick={handleLogout} style={logoutButtonStyle}>Logout</button>
+          </>
         ) : (
           <Link style={linkStyle} to="/login">Login</Link>
         )}
