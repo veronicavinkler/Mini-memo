@@ -38,7 +38,7 @@ export default function App() {
         
         <Route 
           path="/notes" 
-          element={session ? <Notes session={session} /> : <Navigate to="/login" />} 
+          element={session ? <Notes supabase={supabase} /> : <Navigate to="/login" />} 
         />
       </Routes>
     </>
