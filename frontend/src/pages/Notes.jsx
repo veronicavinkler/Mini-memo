@@ -1,39 +1,49 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export default function Notes() {
+export default function Notes({ supabase }) {
   const [notes, setNotes] = useState([]);
   const [newNote, setNewNote] = useState("");
   const navigate = useNavigate();
 
   const API_URL = import.meta.env.VITE_API_URL;
-  const token = localStorage.getItem('token');
 
-  useEffect(() => {
-    if (!token) {
+  const fetchNotes = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
       navigate('/login');
       return;
     }
 
-    fetch(`${API_URL}/notes`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(res => {
-        if (res.status === 401) throw new Error("Unauthorized");
-        return res.json();
-      })
-      .then(data => setNotes(data))
-      .catch(err => console.error("Fetch error:", err));
-  }, [API_URL, token, navigate]);
+    try {
+      const res = await fetch(`${API_URL}/notes`, {
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      
+      if (res.status === 401) throw new Error("Unauthorized");
+      
+      const data = await res.json();
+      setNotes(data);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotes();
+  }, [API_URL, navigate, supabase]);
 
   const addNote = async () => {
     if (!newNote) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
     
     const response = await fetch(`${API_URL}/notes`, {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${session.access_token}`
       },
       body: JSON.stringify({ content: newNote })
     });
@@ -59,11 +69,15 @@ export default function Notes() {
         <button onClick={addNote} style={{ padding: '10px 20px' }}>Save Note</button>
       </div>
       <ul style={{ listStyle: 'none', padding: 0 }}>
-        {notes.map(note => (
-          <li key={note.id} style={{ padding: '10px', borderBottom: '1px solid #ddd' }}>
-            {note.content}
-          </li>
-        ))}
+        {notes.length > 0 ? (
+          notes.map(note => (
+            <li key={note.id} style={{ padding: '10px', borderBottom: '1px solid #ddd' }}>
+              {note.content}
+            </li>
+          ))
+        ) : (
+          <p>No notes found. Start writing!</p>
+        )}
       </ul>
     </div>
   );
